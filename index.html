@@ -1,0 +1,338 @@
+﻿<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>地震避難クイズ</title>
+  <style>
+    body { font-family: sans-serif; margin: 0; background:#f5f5f5; }
+    .box { max-width: 720px; margin: 0 auto; background:#fff; min-height: 100vh; padding: 18px; }
+    h1,h2 { margin: 10px 0; }
+    .page { display:none; }
+    .page.active { display:block; }
+    button {
+      width: 100%; padding: 14px; font-size: 16px; margin: 8px 0;
+      border: 1px solid #ccc; background:#f0f0f0; cursor:pointer; border-radius:10px;
+    }
+    button:hover { background:#e8e8e8; }
+    .primary { background:#4f7cff; color:#fff; border: none; }
+    .primary:hover { background:#3f6ef2; }
+    .muted { color:#666; }
+    img, video { width: 100%; border-radius: 12px; }
+    .card { background:#fafafa; border:1px solid #eee; border-radius:12px; padding:12px; margin:10px 0; }
+    .result-ok { color:#1a7f37; font-weight:700; }
+    .result-ng { color:#b42318; font-weight:700; }
+    .tag { display:inline-block; padding:4px 10px; border-radius:999px; background:#eef2ff; color:#2b3a9a; font-size:13px; margin-left:6px;}
+  </style>
+</head>
+<body>
+  <div class="box">
+
+    <!-- 表紙 -->
+    <section id="p-title" class="page active">
+      <h1>地震避難クイズ</h1>
+      <p class="muted">地震発生時の正しい行動をクイズで学ぼう</p>
+      <button class="primary" id="btnStart">スタート</button>
+    </section>
+
+    <!-- 説明 -->
+    <section id="p-intro" class="page">
+      <h2>説明</h2>
+      <div class="card">
+        <p>・画像を見て、最も適切な行動を4択から選びます。</p>
+        <p>・各コースは3問。1問1点。</p>
+        <p>・3問後に動画で答え合わせを確認できます。</p>
+        <p>・全コースの回答＆動画視聴後にスコア表示。</p>
+      </div>
+      <button class="primary" id="btnToCourse">コース選択へ</button>
+      <button id="btnBackTitle">戻る</button>
+    </section>
+
+    <!-- コース選択 -->
+    <section id="p-course" class="page">
+      <h2>コース選択</h2>
+      <p class="muted">遊びたいコースを選んでね</p>
+
+      <button class="primary" id="btnLiving">リビング</button>
+      <button class="primary" id="btnKitchen">キッチン</button>
+      <button class="primary" id="btnEntrance">玄関</button>
+      <button class="primary" id="btnBedroom">寝室</button>
+
+      <button id="btnBackIntro">戻る</button>
+    </section>
+
+    <!-- クイズ -->
+    <section id="p-quiz" class="page">
+      <h2 id="qTitle">第1問 <span class="tag" id="courseTag">リビング</span></h2>
+      <img id="courseImg" src="" alt="コース画像" />
+      <p id="qText" style="margin-top:12px;"></p>
+      <div id="choices"></div>
+      <p class="muted" id="progress"></p>
+    </section>
+
+    <!-- 解説 -->
+    <section id="p-explain" class="page">
+      <h2 id="judge">結果</h2>
+      <div class="card">
+        <p id="explainText"></p>
+      </div>
+      <button class="primary" id="btnNext">次へ</button>
+    </section>
+
+    <!-- 動画確認 -->
+    <section id="p-video" class="page">
+      <h2>実際の映像で確認 <span class="tag" id="videoTag">リビング</span></h2>
+      <p class="muted">動画を見て、状況と正しい行動を振り返ろう。</p>
+      <video id="vid" src="" controls></video>
+      <button class="primary" id="btnBackToCourse">コース選択に戻る</button>
+      <button class="primary" id="btnToScore" style="display:none;">スコアを見る</button>
+    </section>
+
+    <!-- スコア -->
+    <section id="p-score" class="page">
+      <h2>結果</h2>
+      <p id="scoreText" style="font-size:20px; font-weight:700;"></p>
+      <button class="primary" id="btnRestart">最初に戻る</button>
+    </section>
+
+  </div>
+
+  <script>
+    function show(id){
+      document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+      document.getElementById(id).classList.add("active");
+      window.scrollTo(0,0);
+    }
+
+    // ===== コース別データ =====
+    const courseData = {
+      living: {
+        name: "リビング",
+        img: "living1.png",
+        video: "Movie_living1.mp4",
+        quiz: [
+          {
+            text: "【発見力】地震のとき、リビングで危険になりやすい場所はどれ？",
+            choices: ["低いテーブルのそば", "テレビの前", "何も置いていない壁際", "ソファの上"],
+            correct: 1,
+            explain: "テレビは地震の揺れで倒れたり、台から落下しやすく、正面にいると直撃する危険があります。"
+          },
+          {
+            text: "【判断力】地震が起きたとき、リビングで正しい行動はどれ？",
+            choices: ["すぐ玄関へ向かう", "揺れが収まるまで身を低くする", "窓の外を見る", "家具を押さえる"],
+            correct: 1,
+            explain: "揺れている最中に移動すると転倒や落下物の危険があります。その場で身を低くして頭を守ることが重要です。"
+          },
+          {
+            text: "【対策力】地震対策として、リビングで最も効果的な対策はどれ？",
+            choices: ["家具を壁に固定する", "高い棚に物を置く", "割れ物を飾る", "床に物を置きっぱなしにする"],
+            correct: 0,
+            explain: "家具を固定することで、転倒や落下を防ぎ、けがや避難経路のふさがりを防止できます。"
+          }
+        ]
+      },
+
+      kitchen: {
+        name: "キッチン",
+        img: "kitchen1.jpg",
+        video: "Movie_kitchen1.mp4",
+        quiz: [
+          {
+            text: "【発見力】キッチンで地震時に特に危険な物はどれ？",
+            choices: ["冷蔵庫", "布巾", "マット", "スポンジ"],
+            correct: 0,
+            explain: "冷蔵庫は重く背が高いため、倒れると大きなけがにつながります。"
+          },
+          {
+            text: "【判断力】地震が起きたとき、キッチンで正しい判断はどれ？",
+            choices: ["揺れながら火を消す", "揺れが収まってから火を止める", "そのまま調理を続ける", "窓を開けに行く"],
+            correct: 1,
+            explain: "揺れている間に火に近づくと、転倒ややけどの危険があります。揺れが収まってから行動するのが安全です。"
+          },
+          {
+            text: "【対策力】キッチンでの正しい事前対策はどれ？",
+            choices: ["重い物を高い棚に置く", "食器棚を固定する", "ガラス製品を上に置く", "包丁を出しっぱなしにする"],
+            correct: 1,
+            explain: "食器棚を固定することで、食器の落下や棚の転倒を防げます。"
+          }
+        ]
+      },
+
+      entrance: {
+        name: "玄関",
+        img: "entrance1.jpg",
+        video: "Movie_entrance1.mp4",
+        quiz: [
+          {
+            text: "【発見力】玄関で地震時に危険になりやすい場所はどれ？",
+            choices: ["下駄箱の前", "何も置いていない床", "壁際", "玄関マットの上"],
+            correct: 0,
+            explain: "下駄箱は倒れやすく、出口をふさいでしまう危険があります。"
+          },
+          {
+            text: "【判断力】地震が起きたとき、玄関で正しい行動はどれ？",
+            choices: ["すぐ外へ出る", "揺れが収まるまで中で身を守る", "靴を探す", "ドアの外をのぞく"],
+            correct: 1,
+            explain: "外では瓦や看板などの落下物の危険があるため、揺れが収まるまで屋内で待つ方が安全です。"
+          },
+          {
+            text: "【対策力】玄関での正しい家具配置はどれ？",
+            choices: ["背の高い下駄箱を出口横に置く", "出口をふさがない配置にする", "物を高く積む", "通路に荷物を置く"],
+            correct: 1,
+            explain: "避難経路を確保しておくことで、地震後に安全に外へ出ることができます。"
+          }
+        ]
+      },
+
+      bedroom: {
+        name: "寝室",
+        img: "bedroom1.jpg",
+        video: "Movie_bedroom1.mp4",
+        quiz: [
+          {
+            text: "【発見力】寝室で地震時に最も危険な場所はどれ？",
+            choices: ["ベッドの上の棚", "床", "出入口", "カーテンの近く"],
+            correct: 0,
+            explain: "寝ている間に棚が落下すると、頭部を直撃して命に関わる危険があります。"
+          },
+          {
+            text: "【判断力】地震が起きたとき、寝室で正しい行動はどれ？",
+            choices: ["すぐ立ち上がる", "布団や枕で頭を守る", "窓に近づく", "外へ走る"],
+            correct: 1,
+            explain: "無理に動かず、まず頭を守ることが最優先です。"
+          },
+          {
+            text: "【対策力】寝室での最も重要な対策はどれ？",
+            choices: ["ベッドの上に物を置かない", "高い棚を設置する", "照明を重くする", "家具をベッド横に寄せる"],
+            correct: 0,
+            explain: "頭上の落下物をなくすことで、就寝中の大きな事故を防げます。"
+          }
+        ]
+      }
+    };
+
+    // ===== 状態 =====
+    let currentKey = null;
+    let idx = 0;
+    let totalAnswered = 0;
+    let totalScore = 0;
+    const completed = { living:false, kitchen:false, entrance:false, bedroom:false };
+
+    function startCourse(key){
+      currentKey = key;
+      idx = 0;
+      loadQuestion();
+      show("p-quiz");
+    }
+
+    function loadQuestion(){
+      const c = courseData[currentKey];
+      const q = c.quiz[idx];
+
+      document.getElementById("qTitle").innerHTML =
+        `第${idx+1}問 <span class="tag" id="courseTag">${c.name}</span>`;
+
+      document.getElementById("courseImg").src = c.img;
+      document.getElementById("qText").textContent = q.text;
+      document.getElementById("progress").textContent = `${idx+1} / ${c.quiz.length}`;
+
+      const choicesDiv = document.getElementById("choices");
+      choicesDiv.innerHTML = "";
+
+      q.choices.forEach((text, i) => {
+        const b = document.createElement("button");
+        b.textContent = text;
+        b.onclick = () => answer(i);
+        choicesDiv.appendChild(b);
+      });
+    }
+
+    function answer(choiceIndex){
+      const c = courseData[currentKey];
+      const q = c.quiz[idx];
+
+      totalAnswered++;
+
+      if(choiceIndex === q.correct){
+        totalScore++;
+        document.getElementById("judge").innerHTML = `<span class="result-ok">正解！</span>`;
+      }else{
+        document.getElementById("judge").innerHTML = `<span class="result-ng">不正解</span>`;
+      }
+
+      document.getElementById("explainText").textContent = q.explain;
+
+      const btnNext = document.getElementById("btnNext");
+
+      if(idx < c.quiz.length - 1){
+        btnNext.textContent = "次の問題へ";
+        btnNext.onclick = () => { idx++; loadQuestion(); show("p-quiz"); };
+      }else{
+        btnNext.textContent = "動画で確認へ";
+        btnNext.onclick = () => {
+          document.getElementById("videoTag").textContent = c.name;
+
+          const v = document.getElementById("vid");
+          v.src = c.video;
+          try { v.currentTime = 0; } catch(e){}
+
+          showVideoButtons();
+          show("p-video");
+        };
+      }
+
+      show("p-explain");
+    }
+
+    function allDone(){
+      return completed.living && completed.kitchen && completed.entrance && completed.bedroom;
+    }
+
+    function showVideoButtons(){
+      document.getElementById("btnBackToCourse").style.display = "block";
+      document.getElementById("btnToScore").style.display = allDone() ? "block" : "none";
+    }
+
+    function markCompleted(){
+      if(currentKey) completed[currentKey] = true;
+    }
+
+    function showScore(){
+      document.getElementById("scoreText").textContent = `${totalAnswered}問中${totalScore}問正解`;
+      show("p-score");
+    }
+
+    // ===== ボタンイベント =====
+    document.getElementById("btnStart").onclick = () => show("p-intro");
+    document.getElementById("btnBackTitle").onclick = () => show("p-title");
+    document.getElementById("btnToCourse").onclick = () => show("p-course");
+    document.getElementById("btnBackIntro").onclick = () => show("p-intro");
+
+    document.getElementById("btnLiving").onclick = () => startCourse("living");
+    document.getElementById("btnKitchen").onclick = () => startCourse("kitchen");
+    document.getElementById("btnEntrance").onclick = () => startCourse("entrance");
+    document.getElementById("btnBedroom").onclick = () => startCourse("bedroom");
+
+    document.getElementById("btnBackToCourse").onclick = () => {
+      markCompleted();
+      show("p-course");
+      // 全部終わってたら動画画面の「スコアを見る」が出るので、
+      // コース画面からもスコア行けるようにしたいなら、ここで追加も可能
+    };
+
+    document.getElementById("btnToScore").onclick = () => showScore();
+
+    document.getElementById("btnRestart").onclick = () => {
+      currentKey = null;
+      idx = 0;
+      totalAnswered = 0;
+      totalScore = 0;
+      completed.living = false;
+      completed.kitchen = false;
+      completed.entrance = false;
+      completed.bedroom = false;
+      show("p-title");
+    };
+  </script>
+</body>
+</html>
